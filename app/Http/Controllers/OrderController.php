@@ -306,6 +306,15 @@ class OrderController extends Controller
       return view('orders.list-order-detail-box', compact('detail_order_box', 'id', 'detail'));
     }
 
+    public function orderEditBox($id)
+    {
+        $order_detail       = OrderDetail::find($id);
+        $detail             = $this->orderDetails->getOrderDetail($order_detail->order_id);
+        $detail_order_box   = OrderDetailBox::where('order_detail_id',$id)->orderBy('id')->get();
+        return view('orders.list-order-edit-box', compact('detail_order_box', 'id', 'detail'));
+    }
+
+
     public function updatePlace(Request $request, $id)
     {
         $this->validate($request, [

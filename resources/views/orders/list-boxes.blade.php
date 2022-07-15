@@ -82,12 +82,23 @@ $(function() {
 
     function action(id){
         var $action = '<form action="{{route('order.index')}}/' + id + '" method="post" style="margin-top:5px;">';
-                $action += '@csrf';
-                $action += '@method('DELETE')';
-                $action += '<a class="btn btn-primary btn-sm" href="{{route('order.index')}}/order-detail-box/' + id + '" title="View Detail" style="margin-right:5px;"><i class="fa fa-eye"></i></a>';
-                // $action += '<button type="submit" name="remove" class="btn btn-danger btn-sm" title="Delete"><i class="fa fa-trash"></i></button>';
-            $action += '</form>';
-        return $action;
+        $action += '@csrf';
+        $action += '@method('DELETE')';
+        $action += '<a class="btn btn-primary btn-sm" href="{{route('order.index')}}/order-detail-box/' + id + '" title="View Detail" style="margin-right:5px;"><i class="fa fa-eye"></i></a>';
+        // $action += '<button type="submit" name="remove" class="btn btn-danger btn-sm" title="Delete"><i class="fa fa-trash"></i></button>';
+        $action += '</form>';
+
+        $edit = '<form action="{{route('order.index')}}/' + id + '" method="post" style="margin-top:5px;">';
+        $edit += '@csrf';
+        $edit += '@method('POST')';
+        $edit += '<a class="btn btn-secondary btn-sm" href="{{route('order.index')}}/order-edit-box/' + id + '" title="View Detail" style="margin-right:5px;"><i class="fa fa-edit"></i></a>';
+
+        $edit += '</form>';
+        var $row = `<div class="d-flex justify-content-center">
+                            <div>` + $action +`</div>
+                            <div>` + $edit + `</div>
+                        </div>`;
+        return $row;
     }
 
     var $table = $('#table-ingrd').dataTable( {

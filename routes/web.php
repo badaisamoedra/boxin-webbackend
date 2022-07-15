@@ -74,7 +74,8 @@ Route::group(['middleware' => 'auth'], function() {
     Route::get('/order-detail/{id}','OrderController@orderDetail')->name('order.orderDetail');
     Route::get('/order-detail-box/{id}','OrderController@orderDetailBox')->name('order.orderDetailBox');
     Route::get('/order-detail/{id}/edit','OrderController@orderDetailBox')->name('order.detail.edit');
-    Route::put('/order-detail-box/{id}/update-place','OrderController@updatePlace')->name('order.orderDetailBox.updatePlace');
+      Route::get('/order-edit-box/{id}','OrderController@orderEditBox')->name('order.orderEditBox');
+      Route::put('/order-detail-box/{id}/update-place','OrderController@updatePlace')->name('order.orderDetailBox.updatePlace');
     Route::get('/boxes', ['uses' => 'OrderController@getBoxes', 'as' => 'order.boxes']);
     Route::post('/box/ajax', ['uses' => 'OrderController@getBoxAjax', 'as' => 'order.box.ajax']);
     Route::get('/spaces', ['uses' => 'OrderController@getSpaces', 'as' => 'order.spaces']);
