@@ -39,6 +39,18 @@ class PriceRepository implements PriceRepositoryInterface
 
     }
 
+    public function getPriceOthers($types_of_duration_id,$is_others,$shelves_id, $area_id)
+    {
+        $price =  Price::where('is_others', $is_others)
+            ->where('shelves_id', $shelves_id)
+            ->where('types_of_duration_id', $types_of_duration_id)
+            ->where('area_id', $area_id)
+            ->first();
+
+        return $price;
+
+    }
+
     public function all($box_or_room_id)
     {
         $admin = AdminArea::where('user_id', Auth::user()->id)->first();
@@ -93,10 +105,39 @@ class PriceRepository implements PriceRepositoryInterface
         return $data;
 
     }
+    
+    public function getDataOthersPrice($args = [])
+    {
+
+        $admin = AdminArea::where('user_id', Auth::user()->id)->first();
+        $query = $this->model->query();
+        $query->select('prices.*', 'shelves.name as shelves_name', 'types_of_duration.name as duration',
+                        'types_of_duration.alias', 'shelves.code_shelves as code_shelves', 'areas.name as area_name');
+        $query->join('shelves', 'shelves.id', 'prices.shelves_id');
+        $query->join('types_of_duration', 'types_of_duration.id', 'prices.types_of_duration_id');
+        $query->join('areas', 'areas.id', 'prices.area_id');
+        if(Auth::user()->roles_id == 2){
+            $query->where('prices.area_id', $admin->area_id);
+        }
+        $query->where('prices.is_others', 1);
+        $query->where('prices.deleted_at', NULL);
+        $query->skip($args['start']);
+        $query->take($args['length']);
+        $data = $query->get();
+        
+        return $data;
+
+    }
 
     public function checkPrice($type, $type_size, $area_id)
     {
         $data = $this->model->where('types_of_size_id', $type_size)->where('types_of_box_room_id', $type)->where('area_id', $area_id)->first();
+        return $data;
+    }
+    
+    public function checkPriceOthers($shelves, $area_id)
+    {
+        $data = $this->model->where('shelves_id', $shelves)->where('is_others', 1)->where('area_id', $area_id)->first();
         return $data;
     }
 
