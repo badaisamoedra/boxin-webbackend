@@ -49,6 +49,8 @@ Route::group(['middleware' => 'auth'], function() {
     Route::get('/getNumber', ['uses' => 'ShelvesController@getNumber', 'as' => 'shelves.getNumber']);
     Route::get('/getNumber', ['uses' => 'ShelvesController@getNumber', 'as' => 'shelves.getNumber']);
     Route::get('/resetNumber', ['uses' => 'ShelvesController@resetNumber', 'as' => 'shelves.resetNumber']);
+    Route::get('/get-shelves','ShelvesController@getShelveAjax');
+    Route::get('/get-typesize','ShelvesController@getTypeSize');
   });
   Route::resource('shelves', 'ShelvesController')->except(['show']);
 
@@ -73,9 +75,9 @@ Route::group(['middleware' => 'auth'], function() {
     Route::get('','OrderController@index')->name('order.index');
     Route::get('/order-detail/{id}','OrderController@orderDetail')->name('order.orderDetail');
     Route::get('/order-detail-box/{id}','OrderController@orderDetailBox')->name('order.orderDetailBox');
+    Route::get('/order-edit-box/{id}','OrderController@orderEditBox')->name('order.orderEditBox');
     Route::get('/order-detail/{id}/edit','OrderController@orderDetailBox')->name('order.detail.edit');
-      Route::get('/order-edit-box/{id}','OrderController@orderEditBox')->name('order.orderEditBox');
-      Route::put('/order-detail-box/{id}/update-place','OrderController@updatePlace')->name('order.orderDetailBox.updatePlace');
+    Route::put('/order-detail-box/{id}/update-place','OrderController@updatePlace')->name('order.orderDetailBox.updatePlace');
     Route::get('/boxes', ['uses' => 'OrderController@getBoxes', 'as' => 'order.boxes']);
     Route::post('/box/ajax', ['uses' => 'OrderController@getBoxAjax', 'as' => 'order.box.ajax']);
     Route::get('/spaces', ['uses' => 'OrderController@getSpaces', 'as' => 'order.spaces']);
@@ -194,6 +196,7 @@ Route::group(['middleware' => 'auth'], function() {
   Route::prefix('price')->group(function () {
     Route::get('box','PriceController@priceBox')->name('price.priceBox');
     Route::get('room','PriceController@priceRoom')->name('price.priceRoom');
+    Route::get('others','PriceController@priceOthers')->name('price.priceOthers');
     Route::post('store','PriceController@store')->name('price.store');
   });
 

@@ -2,14 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Model\Area;
-use App\Model\Shelves;
-use App\Model\Space;
-use App\Model\SpaceSmall;
-use App\Model\Box;
-use App\Model\OrderDetail;
 use Carbon;
+use App\Model\Box;
+use App\Model\Area;
+use App\Model\Space;
+use App\Model\Shelves;
+use App\Model\TypeSize;
+use App\Model\SpaceSmall;
+use App\Model\OrderDetail;
+use Illuminate\Http\Request;
 use App\Repositories\ShelvesRepository;
 
 class ShelvesController extends Controller
@@ -271,6 +272,19 @@ class ShelvesController extends Controller
         }
         return $vals - 1; //this is the answer
 
+    }
+
+    
+    public function getShelveAjax()
+    {
+        $shelves = Shelves::select('id','name')->get();
+        return response()->json($shelves, 200);
+    }
+
+    public function getTypeSize()
+    {
+      $sizeTypes = TypeSize::select('types_of_box_room_id','name')->get();
+      return response()->json($sizeTypes, 200);
     }
 
 }

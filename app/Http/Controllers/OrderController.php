@@ -111,6 +111,7 @@ class OrderController extends Controller
             "duration"                  => "required|array|min:1",
             "types_of_duration_id"      => "required|array|min:1",
         ]);
+
         if($validator->fails()) {
           return redirect()->route('order.create')->with('error', $validator->errors());
         }
@@ -148,6 +149,10 @@ class OrderController extends Controller
                 $order_detail->duration             = $v;
                 $order_detail->start_date           = date("Y-m-d", strtotime(str_replace('/', '-', $request->date)));
                 $order_detail->place                = 'warehouse';
+                if($data['types_of_box_room_id'][$k] == 3 || $data['types_of_box_room_id'][$k] == '3'){
+                    $order_detail->is_others = 1;
+                    $order_detail->shelves_id = $data['types_of_size_id'][$k];
+                }
 
                 // weekly
                 if ($order_detail->types_of_duration_id == 2 || $order_detail->types_of_duration_id == '2') {
@@ -181,7 +186,6 @@ class OrderController extends Controller
 
                     // get price box
                     $price = $this->price->getPrice($order_detail->types_of_box_room_id, $order_detail->types_of_size_id, $order_detail->types_of_duration_id, $order->area_id);
-
                     if ($price){
                         $amount = $price->price * $order_detail->duration;
                     } else {
@@ -223,6 +227,34 @@ class OrderController extends Controller
                         // ], 401);
                     }
                 }
+
+                if ($order_detail->types_of_box_room_id == 3 || $order_detail->types_of_box_room_id == "3") {
+                    $type = 'others';
+                    $room_or_box_id = 3;
+                    // get space small
+                    // $spaceSmall = $this->spaceSmall->getDatas(['status_id' => 10, 'area_id' => $request->area_id, 'types_of_size_id' => $data['types_of_size_id'][$k]]);
+                    // if(!empty($spaceSmall->id)){
+                    //     $code_space_small = $spaceSmall->code_space_small;
+                    //     $room_or_box_id = $spaceSmall->id;
+                    //     //change status room to fill
+                    //     SpaceSmall::where('id', $room_or_box_id)->update(['status_id' => 9]);
+                    // } else {
+                    //     // change status room to empty when order failed to create
+                    //     throw new Exception('The room is not available.');
+                    //     // return response()->json(['status' => false, 'message' => 'The room is not available.']);
+                    // }
+
+                    // get price room
+                    $price = $this->price->getPriceOthers($order_detail->types_of_duration_id, 1, $order_detail->types_of_size_id, $order->area_id);
+                    if ($price) {
+                        $amount = $price->price * $order_detail->duration;
+                    } else {
+                        // change status room to empty when order failed to create
+                        // SpaceSmall::where('id', $room_or_box_id)->update(['status_id' => 10]);
+                        throw new Exception('Not found price room.');
+                    }
+                }
+
 
                 $order_detail->name           = 'New '. $type .' '. $a;
                 $order_detail->room_or_box_id = $room_or_box_id;
@@ -280,7 +312,8 @@ class OrderController extends Controller
             // delete order when order_detail failed to create
             // Order::where('id', $order->id)->delete();
             DB::rollback();
-            return redirect()->route('order.create')->with('error', $e->getMessage());
+            return response()->json($e->getMessage());
+            // return redirect()->route('order.create')->with('error', $e->getMessage());
         }
 
         return redirect()->route('order.index');
@@ -311,26 +344,62 @@ class OrderController extends Controller
         $order_detail       = OrderDetail::find($id);
         $detail             = $this->orderDetails->getOrderDetail($order_detail->order_id);
         $detail_order_box   = OrderDetailBox::where('order_detail_id',$id)->orderBy('id')->get();
-        return view('orders.list-order-edit-box', compact('detail_order_box', 'id', 'detail'));
+      return view('orders.list-order-edit-box', compact('detail_order_box', 'id', 'detail'));
     }
-
 
     public function updatePlace(Request $request, $id)
     {
         $this->validate($request, [
             'end_date' => 'after:start_date',
+            'box_or_space_code' => 'required'
         ]);
 
-        $orderDetail       = OrderDetail::find($id);
-        $orderDetail->place = $request->place;
-        $orderDetail->start_date = $request->start_date;
-        $orderDetail->end_date = $request->end_date;
-        $orderDetail->save();
+        \DB::beginTransaction();
+        try {
 
-        if($orderDetail){
-            return redirect()->route('order.orderDetailBox', ['id' => $id])->with('success', 'Data Place successfully updated!');
-        } else {
-            return redirect()->route('order.orderDetailBox', ['id' => $id])->with('error', 'end date must be greater than start date');
+            $orderDetail       = OrderDetail::find($id);
+            $orderDetail->start_date = $request->start_date;
+            $orderDetail->end_date = $request->end_date;
+            $orderDetail->place = $request->place;
+            $orderDetail->manual_dispatch = 1;
+            $orderDetail->save();
+
+            $box_or_space = '';
+            if($orderDetail->types_of_box_room_id == 1){
+                $box_or_space = 'Box';
+                $box = Box::where('code_box', $request->box_or_space_code)->first();
+                if(!$box){
+                    Box::where('id', $orderDetail->room_or_box_id)->update([
+                        'name'     => $request->box_or_space_code,
+                        'barcode'  => $request->box_or_space_code,
+                        'code_box' => $request->box_or_space_code,
+                    ]);
+                }
+
+            }elseif($orderDetail->types_of_box_room_id == 2){
+                $box_or_space = 'Place';
+                $space = SpaceSmall::where('code_space_small', $request->box_or_space_code)->first();
+                if(!$space){
+                    SpaceSmall::where('id', $orderDetail->room_or_box_id)->update([
+                        'code_space_small' => $request->box_or_space_code,
+                        'name'             => $request->box_or_space_code,
+                        'barcode'          => $request->box_or_space_code
+                    ]);
+                }
+
+            }else{
+                return abort(404);
+            }
+
+            \DB::commit();
+            if($orderDetail){
+                return redirect()->route('order.orderDetailBox', ['id' => $id])->with('success', 'Data '.$box_or_space.' successfully updated!');
+            } else {
+                return redirect()->route('order.orderDetailBox', ['id' => $id])->with('error', 'end date must be greater than start date');
+            }
+        } catch (\Exception $err) {
+            \DB::rollback();
+            return redirect()->route('order.orderDetailBox', ['id' => $id])->with('error', $err->getMessage());
         }
     }
 

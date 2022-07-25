@@ -40,7 +40,11 @@ class PriceController extends Controller
         $columns = $request->input("columns");
         $args['orderColumns'] = ($columns[$orderNumber]['name']) ? $columns[$orderNumber]['name'] : 'prices.id';
 
-        $price = $this->price->getData($args);
+        if($args['box_or_room_id'] == 3){
+            $price = $this->price->getDataOthersPrice($args);
+        }else{
+            $price = $this->price->getData($args);
+        }
 
         $recordsTotal = count($price);
 
@@ -58,7 +62,9 @@ class PriceController extends Controller
                       'area_name'               => $arrVal->area_name,
                       'types_of_size_name'      => $arrVal->types_of_size_name,
                       'price'                   => $arrVal->price,
-                      'duration'                => $arrVal->duration);
+                      'duration'                => $arrVal->duration,
+                      'shelves_name'            => isset($arrVal->shelves_name) ? $arrVal->shelves_name : null
+                    );
                 $arr_data['data'][] = $arr;
 
         }
@@ -79,56 +85,85 @@ class PriceController extends Controller
         return view('settings.price.create_room', compact('type_size'));
     }
 
+    public function priceOthers()
+    {
+        return view('settings.price.create_others');
+    }
+
     public function store(Request $r)
     {
         $split      = explode('##', $r->area_id);
         $area_id    = $split[0];
-        $check      = $this->price->checkPrice($r->type_of_box_room_id, $r->type_size_id, $area_id);
+        $shelves    = request()->has('type_shelves') ? $r->type_shelves : null;
+        
+        if($r->type_of_box_room_id == 3 || $r->type_of_box_room_id == '3'){
+            $type     = null;
+            $typeSize = null;
+            $isOthers = 1;
+            $check    = $this->price->checkPriceOthers($shelves, $area_id);
+        }else{
+            $type     = $r->type_of_box_room_id;
+            $typeSize = $r->type_size_id;
+            $check    = $this->price->checkPrice($r->type_of_box_room_id, $r->type_size_id, $area_id);
+        }
+
         if($check){
             return redirect()->route('price.index')->with('error', 'Add New Price failed. Prices in the area already exist.');
         }else{
-            //week
-            $price2 = Price::create([
-              'types_of_box_room_id'    => $r->type_of_box_room_id,
-              'area_id'                 => $area_id,
-              'types_of_size_id'        => $r->type_size_id,
-              'types_of_duration_id'    => 2,
-              'price'                   => $r->weekly_price,
-            ]);
-            $price2->save();
-            //month
-            $price3 = Price::create([
-              'types_of_box_room_id'    => $r->type_of_box_room_id,
-              'area_id'                 => $area_id,
-              'types_of_size_id'        => $r->type_size_id,
-              'types_of_duration_id'    => 3,
-              'price'                   => $r->monthly_price,
-            ]);
-            $price3->save();
-             //6month
-            $price4 = Price::create([
-              'types_of_box_room_id'    => $r->type_of_box_room_id,
-              'area_id'                 => $area_id,
-              'types_of_size_id'        => $r->type_size_id,
-              'types_of_duration_id'    => 7,
-              'price'                   => $r->sixmonth_price,
-            ]);
-            $price4->save();
-            //annual
-            $price5 = Price::create([
-              'types_of_box_room_id'    => $r->type_of_box_room_id,
-              'area_id'                 => $area_id,
-              'types_of_size_id'        => $r->type_size_id,
-              'types_of_duration_id'    => 8,
-              'price'                   => $r->annual_price,
-            ]);
-            $price5->save();
-        }
+            \DB::beginTransaction();
+            try {
+                 //week
+                $price2 = Price::create([
+                    'types_of_box_room_id'    => $type,
+                    'area_id'                 => $area_id,
+                    'types_of_size_id'        => $typeSize,
+                    'types_of_duration_id'    => 2,
+                    'price'                   => $r->weekly_price,
+                    'is_others'               => isset($isOthers) ? $isOthers : null,
+                    'shelves_id'              => $shelves
+                ]);
+                $price2->save();
+                //month
+                $price3 = Price::create([
+                    'types_of_box_room_id'    => $type,
+                    'area_id'                 => $area_id,
+                    'types_of_size_id'        => $typeSize,
+                    'types_of_duration_id'    => 3,
+                    'price'                   => $r->monthly_price,
+                    'is_others'               => isset($isOthers) ? $isOthers : null,
+                    'shelves_id'              => $shelves
+                ]);
+                $price3->save();
+                //6month
+                $price4 = Price::create([
+                    'types_of_box_room_id'    => $type,
+                    'area_id'                 => $area_id,
+                    'types_of_size_id'        => $typeSize,
+                    'types_of_duration_id'    => 7,
+                    'price'                   => $r->sixmonth_price,
+                    'is_others'               => isset($isOthers) ? $isOthers : null,
+                    'shelves_id'              => $shelves
+                ]);
+                $price4->save();
+                //annual
+                $price5 = Price::create([
+                    'types_of_box_room_id'    => $type,
+                    'area_id'                 => $area_id,
+                    'types_of_size_id'        => $typeSize,
+                    'types_of_duration_id'    => 8,
+                    'price'                   => $r->annual_price,
+                    'is_others'               => isset($isOthers) ? $isOthers : null,
+                    'shelves_id'              => $shelves
+                ]);
+                $price5->save();
 
-        if($price5){
-            return redirect()->route('price.index')->with('success', 'New Price added.');
-        } else {
-            return redirect()->route('price.index')->with('error', 'Add New Price failed.');
+                // \DB::commit();
+
+                return redirect()->route('price.index')->with('success', 'New Price added.');
+            } catch (\Exception $err) {
+                \DB::rollback();
+                return redirect()->route('price.index')->with('error', $err->getMessage());
+            }  
         }
     }
 

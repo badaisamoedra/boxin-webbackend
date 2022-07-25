@@ -495,23 +495,69 @@ function area_Selectdata(values) {
 }
 area_Selectdata('');
 
-function tableDetOrder(spaceBox, typeSize, duration, typeDuration, typePickup, row){
+function getTypeSize(row, type = null)
+{
+    if(type == 1 || type == 2){
+        var url = "{{ url('/shelves/get-typesize') }}";        
+    }
+
+    if(type == 3){
+        var url = "{{ url('/shelves/get-shelves') }}";
+    }
+
+    var typeOfSize = $('#types_of_size_id_'+row);
+    typeOfSize.empty().trigger('change');
+    typeOfSize.prepend($(`<option></option>`).html('Loading...'))
+    $.ajax({
+        url: url,
+        dataType: "json",
+        type: "GET",
+        data: {},
+        error: function(res, xhr, status) {
+            console.log(res)
+        }
+    }).then(function(res) {
+        typeOfSize.empty();
+        if(type == 3){
+            $.each(res, (i, data) => {
+                typeOfSize.append(
+                    `<option value="${data.id}">${data.name}</option>`
+                )
+            })
+        }else{
+            $.each(res, (i, data) => {
+                typeOfSize.append(
+                    `<option value="${data.types_of_box_room_id}">${data.name}</option>`
+                )
+            })
+        }
+    }); 
+
+}
+
+
+function tableDetOrder(spaceBox, typeSize, duration, typeDuration, typePickup, row){ 
     var daySelected = (typeDuration == 1) ? 'selected' : '';
     var weekSelected = (typeDuration == 2) ? 'selected' : '';
     var monthSelected = (typeDuration == 3) ? 'selected' : '';
     var boxSelected = (spaceBox == 1) ? 'selected' : '';
     var spaceSelected = (spaceBox == 2) ? 'selected' : '';
+    var othersSelected = (spaceBox == 3) ? 'selected' : '';
     var userSelected = (typePickup == 1) ? 'selected' : '';
     var warehouseSelected = (typePickup == 2) ? 'selected' : '';
     var htmlDetail = '<tr no="'+row+'">';
         htmlDetail += '<td>';
-            htmlDetail += '<select class="form-control" name="types_of_box_room_id[]" required>';
+            htmlDetail += '<select class="form-control" id="types_of_box_room_'+row+'" name="types_of_box_room_id[]" onclick="changeTypeBox('+row+')" required>';
                 htmlDetail += '<option value=""></option>';
                 htmlDetail += '<option value="1" '+boxSelected+'>Box</option>';
                 htmlDetail += '<option value="2" '+spaceSelected+'>Space</option>';
+                htmlDetail += '<option value="3" '+othersSelected+'>Others</option>';
             htmlDetail += '</select>';
         htmlDetail += '</td>';
-        htmlDetail += '<td><select class="form-control" name="types_of_size_id[]" required><option value="1">Small Box</option></select></td>';
+        htmlDetail += `<td>
+                        <select class="form-control" id="types_of_size_id_`+row+`" name="types_of_size_id[]" required>
+                        </select>
+                    </td>`;
         htmlDetail += '<td>';
             htmlDetail += '<div class="row">';
                 htmlDetail += '<div class="col-md-6" style="padding-right: 1px;">';
@@ -534,6 +580,14 @@ function tableDetOrder(spaceBox, typeSize, duration, typeDuration, typePickup, r
 }
 
 tableDetOrder('', '', 1, 1, '', 1);
+
+function changeTypeBox(row)
+{
+    $('#types_of_box_room_'+row).on('change', function(){
+        var type = $(this).val()
+        getTypeSize(row, type);
+    })
+}
 
 $(document).on('click', '.btn-add-row', function(){
     var row = $('#table-det-order tbody tr').length;

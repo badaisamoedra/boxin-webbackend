@@ -38,6 +38,7 @@
                 <ul class="nav nav-tabs" role="tablist">
                     <li class="nav-item"> <a class="nav-link active" data-toggle="tab" href="#home" role="tab"><span class="hidden-sm-up"><i class="ti-home"></i></span> <span class="hidden-xs-down">Price Box</span></a> </li>
                     <li class="nav-item"> <a class="nav-link" data-toggle="tab" href="#profile" role="tab"><span class="hidden-sm-up"><i class="ti-user"></i></span> <span class="hidden-xs-down">Price Room</span></a> </li>
+                    <li class="nav-item"> <a class="nav-link" data-toggle="tab" href="#others" role="tab"><span class="hidden-sm-up"><i class="ti-user"></i></span> <span class="hidden-xs-down">Others</span></a> </li>
                 </ul>
                 <!-- Tab panes -->
                 <div class="tab-content tabcontent-border">
@@ -81,6 +82,27 @@
                           </tbody>
                         </table>
                       </div>
+                    </div>
+
+                    <div class="tab-pane p-20" id="others" role="tabpanel">
+                        <a href="{{ route('price.priceOthers') }}" class="btn waves-effect waves-light btn-sm btn-primary" title="Add" style="margin-right: 10px;"><i class="fa fa-plus"></i>&nbsp;Add Price Others
+                        </a>
+                        <div class="table-responsive m-t-10">
+                          <table id="table-others" class="table table-striped table-bordered" style="width: 100%;">
+                            <thead>
+                                <tr>
+                                  <th width="3%">No</th>
+                                  <th width="">Area</th>
+                                  <th width="">Type Size</th>
+                                  <th width="">Type Duration</th>
+                                  <th width="" class="text-right">Price (Rp)</th>
+                                  <th width="3%" class="text-center no-sort"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                          </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -183,6 +205,51 @@ $(function() {
             { "data": "id", "bSortable": false },
             { "data": "area_name", "bSortable": true },
             { "data": "types_of_size_name", "bSortable": true },
+            { "data": "duration", "bSortable": true },
+            { "data": "price", "bSortable": true },
+            { "data": function ( row, type, val, meta ) { return "" + actionRoom(row.id)  ; }, "sClass": "center", "bSortable": false },
+        ],
+        "initComplete": function( settings, json ) {
+            //  $('.count_act').html($count_active);
+        }
+    });
+
+    // Other Table
+    function actionOthers(id){
+        var $action = '<a class="btn btn-info btn-sm" href="{{route('price.index')}}/' + id + '/edit" title="Edit" style="margin-right:5px;"><i class="fa fa-pencil"></i></a>';
+        return $action;
+    }
+
+    var $table2 = $('#table-others').dataTable( {
+        "autoWidth": true,
+        "processing": true,
+        "serverSide": true,
+        "bFilter": true,
+        "order": [[ 0, "desc" ]],
+        "columnDefs": [
+            { "name": "prices.id", "sClass": "center", "targets": 0 },
+            { "name": "area_name", "targets": 1 },
+            { "name": "shelves_name",  "targets": 2 },
+            { "name": "duration", "targets": 3 },
+            { "name": "price", "sClass": "center", "targets": 4 },
+        ],
+        "ajax": {
+            "url": "{{ route('price.ajax') }}",
+            "type": "POST",
+            "data": function ( d ) {
+                d._token            = $('meta[name="_token"]').attr('content');
+                d.box_or_room_id    = 3;
+                // etc
+            }
+        },
+        "oLanguage": {
+            "sProcessing": "<div style='top:15%; position: fixed; left: 20%;'><img src='{{asset('assets/images/preloader.gif')}}'></div>"
+        },
+
+        "columns": [
+            { "data": "id", "bSortable": false },
+            { "data": "area_name", "bSortable": true },
+            { "data": "shelves_name", "bSortable": true },
             { "data": "duration", "bSortable": true },
             { "data": "price", "bSortable": true },
             { "data": function ( row, type, val, meta ) { return "" + actionRoom(row.id)  ; }, "sClass": "center", "bSortable": false },
